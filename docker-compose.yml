@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16
+    container_name: attendance-db
+    environment:
+      POSTGRES_USER: attendance_user
+      POSTGRES_PASSWORD: attendance123
+      POSTGRES_DB: attendance
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: attendance-app
+    depends_on:
+      - db
+    environment:
+      POSTGRES_USER: attendance_user
+      POSTGRES_PASSWORD: attendance123
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: attendance
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:

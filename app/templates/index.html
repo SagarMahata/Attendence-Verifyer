@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero">
+  <h1>Attendance that can't be faked from bed.</h1>
+  <p style="margin-left:auto;margin-right:auto;">
+    A teacher opens a roll call from the classroom. Students within 100 metres
+    verify their own face to sign in — no passwords passed around, no marking
+    a friend present.
+  </p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="/register">Get started</a>
+    <a class="btn btn-ghost" href="/login">I already have an account</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <hr class="chalk-rule" />
+  <div class="ledger">
+    <div class="ledger-row">
+      <span class="roll-no">01</span>
+      <div class="main">
+        <div class="title">Teacher opens the roll</div>
+        <div class="meta">Sets subject, class location, radius and a time limit</div>
+      </div>
+    </div>
+    <div class="ledger-row">
+      <span class="roll-no">02</span>
+      <div class="main">
+        <div class="title">Student confirms location</div>
+        <div class="meta">Must be inside the geofence — unless anywhere mode is on</div>
+      </div>
+    </div>
+    <div class="ledger-row">
+      <span class="roll-no">03</span>
+      <div class="main">
+        <div class="title">Student verifies by face</div>
+        <div class="meta">Matched against their enrolled face, on-device</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

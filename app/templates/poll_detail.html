@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap">
+  <a href="/teacher" style="font-size:0.85rem;">&larr; All polls</a>
+  <h2 style="margin-top:0.6rem;">
+    <span class="status-dot {{ 'live' if poll.is_active else 'ended' }}"></span>{{ poll.subject }}
+  </h2>
+  <p class="meta" style="font-family: var(--font-mono); color: var(--chalk-dim);">
+    Opened {{ poll.created_at.strftime('%d %b, %H:%M') }}
+    {% if poll.anywhere_mode %}&middot; anywhere mode{% else %}&middot; {{ poll.radius_m|int }} m radius{% endif %}
+    {% if poll.expires_at %}&middot; closes {{ poll.expires_at.strftime('%H:%M') }}{% endif %}
+  </p>
+
+  {% if poll.is_active %}
+  <button class="btn btn-danger" id="endPollBtn">End poll now</button>
+  {% endif %}
+
+  <hr class="chalk-rule" />
+
+  <h2>Present ({{ attendances|length }})</h2>
+  {% if attendances %}
+  <div class="ledger">
+    {% for a in attendances %}
+    <div class="ledger-row">
+      <span class="roll-no">{{ "%02d"|format(loop.index) }}</span>
+      <div class="main">
+        <div class="title">{{ a.student.name }}</div>
+        <div class="meta">{{ a.timestamp.strftime('%H:%M:%S') }} &middot; {{ a.student.email }}</div>
+      </div>
+      {% if a.mode == 'anywhere' %}
+        <span class="pill anywhere">anywhere</span>
+      {% else %}
+        <span class="pill">{{ a.distance_m|round(1) }} m away</span>
+      {% endif %}
+      <span class="pill present">verified</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">No one has checked in yet.</div>
+  {% endif %}
+</div>
+
+<script>
+const endBtn = document.getElementById('endPollBtn');
+if (endBtn) {
+  endBtn.addEventListener('click', async () => {
+    if (!confirm('End this poll? Students will no longer be able to check in.')) return;
+    await fetch('/teacher/polls/{{ poll.id }}/end', { method: 'POST' });
+    window.location.reload();
+  });
+}
+</script>
+{% endblock %}

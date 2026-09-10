@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap">
+  <h2>Open rolls</h2>
+  <p>Check into any class currently taking attendance.</p>
+
+  {% if polls %}
+  <div class="ledger">
+    {% for poll in polls %}
+    <div class="ledger-row">
+      <span class="roll-no">{{ "%02d"|format(loop.index) }}</span>
+      <div class="main">
+        <div class="title"><span class="status-dot live"></span>{{ poll.subject }}</div>
+        <div class="meta">
+          {{ poll.teacher.name }}
+          {% if poll.anywhere_mode %}&middot; anywhere mode{% else %}&middot; within {{ poll.radius_m|int }} m{% endif %}
+        </div>
+      </div>
+      {% if poll.id in marked_poll_ids %}
+        <span class="pill present">checked in</span>
+      {% else %}
+        <a class="btn btn-primary" href="/student/polls/{{ poll.id }}">Check in</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">No open rolls right now — check back when class starts.</div>
+  {% endif %}
+
+  <hr class="chalk-rule" />
+
+  <h2>Your history</h2>
+  {% if history %}
+  <div class="ledger">
+    {% for a in history %}
+    <div class="ledger-row">
+      <span class="roll-no">{{ "%02d"|format(loop.index) }}</span>
+      <div class="main">
+        <div class="title">{{ a.poll.subject }}</div>
+        <div class="meta">{{ a.timestamp.strftime('%d %b, %H:%M') }}</div>
+      </div>
+      {% if a.mode == 'anywhere' %}<span class="pill anywhere">anywhere</span>{% endif %}
+      <span class="pill present">present</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">No check-ins yet.</div>
+  {% endif %}
+
+  <p style="margin-top:2rem;"><a href="/enroll-face">Re-enroll your face &rarr;</a></p>
+</div>
+{% endblock %}

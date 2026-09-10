@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap narrow">
+  <a href="/student" style="font-size:0.85rem;">&larr; Open rolls</a>
+  <h2 style="margin-top:0.6rem;">{{ poll.subject }}</h2>
+  <p class="meta" style="font-family: var(--font-mono); color: var(--chalk-dim);">
+    {{ poll.teacher.name }} &middot;
+    {% if poll.anywhere_mode %}anywhere mode{% else %}{{ poll.radius_m|int }} m radius{% endif %}
+  </p>
+
+  {% if already %}
+    <div class="ok-banner">You already checked into this class at {{ already.timestamp.strftime('%H:%M:%S') }}.</div>
+  {% elif not poll.is_active %}
+    <div class="error-banner">This poll has closed.</div>
+  {% else %}
+    <div class="panel">
+      {% if not poll.anywhere_mode %}
+      <div style="margin-bottom:1rem;">
+        <span class="geo-chip" id="geoChip">📍 checking your location…</span>
+      </div>
+      {% endif %}
+
+      <div class="cam-wrap">
+        <video id="video" autoplay muted playsinline></video>
+        <div class="cam-ring" id="ring"></div>
+      </div>
+      <div class="status-line" id="status">Loading face model…</div>
+      <div id="resultBanner"></div>
+    </div>
+  {% endif %}
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<script defer src="/static/js/geolocation.js"></script>
+<script defer src="/static/js/face.js"></script>
+<script defer>
+  window.addEventListener('DOMContentLoaded', () => {
+    {% if not already and poll.is_active %}
+    RollCallFace.initCheckInPage({
+      videoId: 'video',
+      ringId: 'ring',
+      statusId: 'status',
+      resultId: 'resultBanner',
+      geoChipId: {{ 'null' if poll.anywhere_mode else "'geoChip'" }},
+      anywhereMode: {{ 'true' if poll.anywhere_mode else 'false' }},
+      pollId: {{ poll.id }},
+      submitUrl: '/student/api/attendance',
+      onSuccess: () => { setTimeout(() => window.location.href = '/student', 1500); },
+    });
+    {% endif %}
+  });
+</script>
+{% endblock %}

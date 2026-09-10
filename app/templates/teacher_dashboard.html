@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap">
+  <h2>Open a roll call</h2>
+  <p>Your current location becomes the centre of the attendance zone, unless you switch on anywhere mode.</p>
+
+  <div class="panel" style="margin-top:1.2rem;">
+    <div id="formError" class="error-banner" style="display:none;"></div>
+
+    <div class="field">
+      <label for="subject">Subject / class</label>
+      <input type="text" id="subject" placeholder="e.g. Physics — Period 3" />
+    </div>
+
+    <div class="field">
+      <label for="radius">Attendance radius (metres)</label>
+      <input type="number" id="radius" value="{{ default_radius|int }}" min="10" max="2000" />
+    </div>
+
+    <div class="field">
+      <label for="duration">Open for (minutes)</label>
+      <input type="number" id="duration" value="{{ default_duration }}" min="1" max="180" />
+    </div>
+
+    <div class="switch-row">
+      <div>
+        <div style="font-weight:600;">Anywhere mode</div>
+        <div class="meta" style="font-size:0.82rem; color:var(--chalk-dim);">Skip the location check — students can check in from anywhere.</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="anywhereMode" />
+        <span class="track"></span>
+      </label>
+    </div>
+
+    <div style="margin-top:1.2rem; display:flex; align-items:center; gap:1rem;">
+      <button class="btn btn-primary" id="startPollBtn">Start poll</button>
+      <span class="geo-chip" id="geoChip">📍 location not captured yet</span>
+    </div>
+  </div>
+
+  <hr class="chalk-rule" />
+
+  <h2>Your polls</h2>
+  {% if polls %}
+  <div class="ledger">
+    {% for poll in polls %}
+    <div class="ledger-row">
+      <span class="roll-no">{{ "%02d"|format(loop.index) }}</span>
+      <div class="main">
+        <a class="title" href="/teacher/polls/{{ poll.id }}">
+          <span class="status-dot {{ 'live' if poll.is_active else 'ended' }}"></span>{{ poll.subject }}
+        </a>
+        <div class="meta">
+          {{ poll.created_at.strftime('%d %b, %H:%M') }}
+          &middot; {{ "Anywhere mode" if poll.anywhere_mode else (poll.radius_m|int|string + " m radius") }}
+        </div>
+      </div>
+      {% if poll.anywhere_mode %}<span class="pill anywhere">anywhere</span>{% endif %}
+      <span class="pill">{{ poll.attendances|length }} present</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">No polls yet — start your first roll call above.</div>
+  {% endif %}
+</div>
+
+<script>
+let capturedLat = null, capturedLng = null;
+
+async function captureLocation() {
+  const chip = document.getElementById('geoChip');
+  if (document.getElementById('anywhereMode').checked) {
+    chip.textContent = '📍 anywhere mode — location skipped';
+    return;
+  }
+  if (!navigator.geolocation) {
+    chip.textContent = '📍 geolocation not supported by this browser';
+    return;
+  }
+  chip.textContent = '📍 locating…';
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      capturedLat = pos.coords.latitude;
+      capturedLng = pos.coords.longitude;
+      chip.textContent = `📍 locked (±${Math.round(pos.coords.accuracy)} m)`;
+    },
+    (err) => { chip.textContent = '📍 location denied — allow it to start a geofenced poll'; },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+document.getElementById('anywhereMode').addEventListener('change', captureLocation);
+captureLocation();
+
+document.getElementById('startPollBtn').addEventListener('click', async () => {
+  const errBox = document.getElementById('formError');
+  errBox.style.display = 'none';
+  const subject = document.getElementById('subject').value.trim();
+  const anywhere = document.getElementById('anywhereMode').checked;
+  const radius = parseFloat(document.getElementById('radius').value) || 100;
+  const duration = parseInt(document.getElementById('duration').value) || 15;
+
+  if (!subject) { errBox.textContent = 'Give the class a subject name.'; errBox.style.display = 'block'; return; }
+  if (!anywhere && (capturedLat === null || capturedLng === null)) {
+    errBox.textContent = 'Waiting for your location — allow location access, or switch on anywhere mode.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  const res = await fetch('/teacher/polls', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      subject, radius_m: radius, duration_minutes: duration,
+      anywhere_mode: anywhere,
+      latitude: anywhere ? null : capturedLat,
+      longitude: anywhere ? null : capturedLng,
+    }),
+  });
+  const data = await res.json();
+  if (data.ok) {
+    window.location.href = `/teacher/polls/${data.poll_id}`;
+  } else {
+    errBox.textContent = data.error || 'Could not start poll.';
+    errBox.style.display = 'block';
+  }
+});
+</script>
+{% endblock %}
