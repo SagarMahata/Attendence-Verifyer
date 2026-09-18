@@ -41,7 +41,11 @@
       ringId: 'ring',
       statusId: 'status',
       resultId: 'resultBanner',
-      geoChipId: {{ 'null' if poll.anywhere_mode else "'geoChip'" }},
+      {% if poll.anywhere_mode %}
+        geoChipId: null,
+      {% else %}
+        geoChipId: 'geoChip',
+      {% endif %}
       anywhereMode: {{ 'true' if poll.anywhere_mode else 'false' }},
       pollId: {{ poll.id }},
       submitUrl: '/student/api/attendance',
