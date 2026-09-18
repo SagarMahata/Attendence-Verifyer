@@ -16,7 +16,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 @app.exception_handler(HTTPException)
 async def redirect_unauthenticated(request, exc: HTTPException):
     # require_user() raises a 303 HTTPException with a Location header when
-    # nobody is logged in; turn that into a real redirect for the browser.
+    # nobody is logged in. Redirect to the login page in that case.
     if exc.status_code == 303 and "Location" in (exc.headers or {}):
         return RedirectResponse(exc.headers["Location"], status_code=303)
     from fastapi.responses import JSONResponse
